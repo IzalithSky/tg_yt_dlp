@@ -9,6 +9,7 @@ from telegram.ext import (
     ContextTypes
 )
 
+
 def download_video(url: str) -> str:
     output_template = "downloads/%(title)s.%(ext)s"
     cookies_file = os.getenv("YT_DLP_COOKIES", "cookies.txt")
@@ -31,32 +32,36 @@ def download_video(url: str) -> str:
             last_exception = str(e)
     raise Exception(f"All retries exhausted. Last error: {last_exception}")
 
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Send me a video URL, and I'll download it for you!")
 
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text
-    bot_username = context.bot.username  # Get bot's username dynamically
+    bot_username = context.bot.username
 
     if update.message.chat.type in ["group", "supergroup"]:
         if not message_text.startswith(f"@{bot_username} "):
-            return  # Ignore messages that don't mention the bot in groups
-        
+            return
         parts = message_text.split(" ", 1)
         if len(parts) < 2:
             await update.message.reply_text("Please provide a video link after mentioning me.")
             return
-        url = parts[1]  # Extract the URL after the mention
+        url = parts[1]
     else:
-        url = message_text  # In private chat, just use the message as the URL
-    
+        url = message_text
+
     try:
         filename = download_video(url)
-        with open(filename, 'rb') as video_file:
-            await update.message.reply_video(video=video_file)
-        os.remove(filename)
+        try:
+            with open(filename, 'rb') as video_file:
+                await update.message.reply_video(video=video_file)
+        finally:
+            os.remove(filename)
     except Exception as e:
         await update.message.reply_text(f"Error: {str(e)}")
+
 
 def main() -> None:
     token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -69,6 +74,7 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.TEXT & (filters.ChatType.PRIVATE | filters.Entity("mention")), handle_message))
     
     application.run_polling()
+
 
 if __name__ == "__main__":
     main()
