@@ -1,4 +1,5 @@
 import os
+import sys
 import yt_dlp
 from telegram import Update
 from telegram.ext import (
@@ -66,15 +67,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 def main() -> None:
+    os.makedirs("downloads", exist_ok=True)
+    
+    if len(sys.argv) == 2:
+        url = sys.argv[1]
+        print(f"Downloading: {url}")
+        try:
+            filename = download_video(url)
+            print(f"Saved to: {filename}")
+        except Exception as e:
+            print(f"Error: {e}")
+        return
+
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token:
         raise ValueError("TELEGRAM_BOT_TOKEN is not set in the environment.")
-    
-    os.makedirs("downloads", exist_ok=True)
+
     application = ApplicationBuilder().token(token).build()
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(MessageHandler(filters.TEXT & (filters.ChatType.PRIVATE | filters.Entity("mention")), handle_message))
-    
+
     application.run_polling()
 
 
