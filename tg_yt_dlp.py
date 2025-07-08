@@ -16,14 +16,16 @@ def download_video(url: str) -> str:
     last_exception = None
 
     for attempt in range(3):
-        ydl_opts = {
-            'format': 'bestvideo+bestaudio/best',
+        cookies_file: str | None = os.getenv("YT_DLP_COOKIES", "cookies.txt")
+        ydl_opts: dict[str, str | bool] = {
+            'format': 'bestvideo[width<=720]+bestaudio/best[width<=720]',
             'merge_output_format': 'mp4',
             'recodevideo': 'mp4',
             'outtmpl': output_template,
-            'cookies': cookies_file,
             'verbose': True,
         }
+        if cookies_file and os.path.isfile(cookies_file):
+            ydl_opts['cookies'] = cookies_file
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
