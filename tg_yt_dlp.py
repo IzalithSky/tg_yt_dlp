@@ -19,9 +19,26 @@ def download_video(url: str) -> str:
     for attempt in range(3):
         cookies_file: str | None = os.getenv("YT_DLP_COOKIES", "cookies.txt")
         ydl_opts: dict[str, str | bool] = {
-            'format': 'bestvideo[width<=720]+bestaudio/best[width<=720]',
+            'format': (
+                'bestvideo[vcodec^=avc1][height<=720]+bestaudio[acodec^=mp4a]/'
+                'best[height<=720][vcodec^=avc1]/'
+                'best[height<=720]/'
+                'best'
+            ),
             'merge_output_format': 'mp4',
-            'recodevideo': 'mp4',
+            'postprocessors': [
+                {
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4',
+                },
+                {
+                    'key': 'FFmpegVideoRemuxer',
+                    'preferedformat': 'mp4',
+                },
+                {
+                    'key': 'FFmpegMetadata',
+                },
+            ],
             'outtmpl': output_template,
             'verbose': True,
         }
